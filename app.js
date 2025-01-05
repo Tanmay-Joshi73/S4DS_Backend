@@ -15,7 +15,9 @@ mongoose
   .catch((err) => console.error(err));
 
 app.use('/App',UserRoutes)
-
+app.get('*',(req,res)=>{
+  res.redirect('/App/Get')
+})
 app.listen(8000,'0.0.0.0',()=>{
     console.log("Listening from the server")
 })

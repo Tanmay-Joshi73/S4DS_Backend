@@ -1,4 +1,5 @@
 const UserModel = require('../Model/userMode')
+const RSVP_Model=require("../Model/RSVP")
 const {sendMail,EmailVerifier}=require('./UserController')
 exports.Show = async (req, res) => {
     await res.send("Hey i cannot trust you")
@@ -49,4 +50,61 @@ exports.FormHandelling = async (req, res) => {
         error: error.message,
       });
     }
+}
+
+//function fo handelling RSVP
+exports.RSVP_Handle=async(req,res)=>{
+  const {name,email,attending}=req.body;
+  const attendanceMessage = attending
+    ? `We're thrilled that you'll be joining us! 🎉`
+    : `We're sorry you can't make it, but we appreciate your response.`;
+
+  const guestStatus = attending ? 'Attending ✅' : 'Not Attending ❌';
+  const responseDate = new Date().toLocaleDateString();
+
+  const FinalGreatingMessage= `
+✨ RSVP Confirmation ✨
+━━━━━━━━━━━━━━━━━━━━━
+
+Dear ${name},
+
+${attendanceMessage}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+📝 RSVP Details:
+- Guest Status: ${guestStatus}
+- Response Date: ${responseDate}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+If you have any further questions or changes to your RSVP, 
+feel free to reply to this email.
+
+Looking forward to celebrating together! 🎉
+
+Best regards,  
+━━━━━━━━━━━━━━━━━  
+The S4DS Team 🌟  
+
+Contact us: contact@s4ds.com
+  `;
+
+
+const ExistingUser=await RSVP_Model.findOne({
+  name:name,
+  email:email
+})
+if(ExistingUser){
+  res.json({})
+  return
+}
+const newUser=await RSVP_Model.create({
+  name:name,
+  email:email,
+  attending:attending
+})
+await sendMail(email,FinalGreatingMessage)
+console.log("New User Created");
+
 }

@@ -83,7 +83,7 @@ exports.EmailVerifier = async (Email) => {
 
 }
 exports.QRGenerator = async (id) => {
-  const URL = `http://localhost:8000/App/CheckIN:${id.toString()}`
+  const URL = `https://s4ds-backend.onrender.com/App/CheckIN:${id.toString()}`
   // const filePath = `./QRCode_${id}.png`; // Path to save the QR code image
   // await QR.toFile(filePath, URL);
 

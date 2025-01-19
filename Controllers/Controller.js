@@ -1,5 +1,6 @@
 const UserModel = require('../Model/userMode')
 const RSVP_Model = require("../Model/RSVP")
+const mongoose=require('mongoose')
 const {exec}=require("child_process")
 const fs=require('fs')
 const File=fs.readFileSync(`${__dirname}/../QR.png`,'utf-8')
@@ -75,10 +76,9 @@ exports.RSVP_Handle = async (req, res) => {
     attending: attending
   })
   if (newUser.attending == true) {
-    console.log("After")
     QRCode = await QRGenerator(newUser._id)
-   qrCodeImage=QRCode.split(',')[1]
-    console.log(QRCode)
+    qrCodeImage=QRCode.split(',')[1]
+   
   }
 
   const attendanceMessage = attending
@@ -94,9 +94,41 @@ exports.RSVP_Handle = async (req, res) => {
   console.log("New User Created");
 }
 
+
 exports.CheckAttende = async (req, res) => {
-  console.log("hey it is done");
+  //Logic For Making the Attende Of The person
+  const ObjectID=req.params.Id
+  const id = ObjectID.split(':')[1];
+  const UserID = new mongoose.Types.ObjectId(id);
+  // const user = await RSVP_Model.findOne({_id:UserID})
+  const Existinguser=await RSVP_Model.findOne({_id:UserID})
+  if (Existinguser) {
+    res.send(`
+      <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); max-width: 600px; margin: auto;">
+        <h2 style="color: #2c3e50;">Welcome Back, ${Existinguser.name}!</h2>
+        <p style="font-size: 18px; color: #34495e;">We are excited to see you!</p>
+        <hr style="border-top: 2px solid #e0e0e0; margin: 20px 0;" />
+        <h3 style="color: #27ae60;">You are now checked in! ✅</h3>
+        <p style="font-size: 16px; color: #7f8c8d;">Thank you for your response. We're thrilled to have you with us! 🎉</p>
+      </div>
+    `);
+    Existinguser.Check_In=true;
+    await Existinguser.save()
+  }
+  else{
+    res.send("Given user is not present")
+  }
+
 }
+
+
+
+
+
+
+
+
+
 // Function to run the Python code
 exports.Python = async (req, res) => {
   const { code } = req.body;
@@ -148,3 +180,12 @@ exports.Python = async (req, res) => {
     });
   });
 };
+
+
+
+
+exports.DeleteAll=async(req,res)=>{
+  console.log("hey this route is just hit")
+  const delData=await RSVP_Model.deleteMany()
+  res.send(delData)
+}

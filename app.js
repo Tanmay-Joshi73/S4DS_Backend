@@ -9,7 +9,7 @@ const cors=require("cors")
 app.use(cors())
 app.use(express.json())
 app.use(bodyparser.json())
-const MONGO_URI=process.env.Local;
+const MONGO_URI=process.env.DataBase;
 mongoose
   .connect(MONGO_URI)
   .then(() => console.log('MongoDB connected'))

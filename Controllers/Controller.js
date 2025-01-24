@@ -1,10 +1,12 @@
 const UserModel = require('../Model/userMode')
+// const server = require("socket.io")
+// const io = new server(server);
 const RSVP_Model = require("../Model/RSVP")
-const mongoose=require('mongoose')
-const {exec}=require("child_process")
-const fs=require('fs')
-const File=fs.readFileSync(`${__dirname}/../QR.png`,'utf-8')
-const PythonFile='./temp.py'
+const mongoose = require('mongoose')
+const { exec } = require("child_process")
+const fs = require('fs')
+const File = fs.readFileSync(`${__dirname}/../QR.png`, 'utf-8')
+const PythonFile = './temp.py'
 let qrCodeImage;
 const { sendMail, EmailVerifier, QRGenerator } = require('./UserController')
 exports.Show = async (req, res) => {
@@ -67,18 +69,20 @@ exports.RSVP_Handle = async (req, res) => {
     email: email
   })
   if (ExistingUser) {
-    res.json({})
+    console.log("Given user is already present for that name")
+    res.json({Success:false,Message:"Given User Is Already Present"})
     return
   }
+  res.json({Success:true,Message:"User Registation Is Done"})
   const newUser = await RSVP_Model.create({
     name: name,
     email: email,
     attending: attending
   })
+  
   if (newUser.attending == true) {
     QRCode = await QRGenerator(newUser._id)
-    qrCodeImage=QRCode.split(',')[1]
-   
+    qrCodeImage = QRCode.split(',')[1]
   }
 
   const attendanceMessage = attending
@@ -88,46 +92,61 @@ exports.RSVP_Handle = async (req, res) => {
   const guestStatus = attending ? 'Attending ✅' : 'Not Attending ❌';
   const responseDate = new Date().toLocaleDateString();
 
-  
 
-  await sendMail(email,'',QRCode,name,guestStatus,responseDate)
+
+  await sendMail(email, '', QRCode, name, guestStatus, responseDate)
   console.log("New User Created");
 }
 
 
 exports.CheckAttende = async (req, res) => {
-  //Logic For Making the Attende Of The person
-  const ObjectID=req.params.Id
-  const id = ObjectID.split(':')[1];
-  const UserID = new mongoose.Types.ObjectId(id);
-  // const user = await RSVP_Model.findOne({_id:UserID})
-  const Existinguser=await RSVP_Model.findOne({_id:UserID})
-  if (Existinguser) {
-    res.send(`
-      <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); max-width: 600px; margin: auto;">
-        <h2 style="color: #2c3e50;">Welcome Back, ${Existinguser.name}!</h2>
-        <p style="font-size: 18px; color: #34495e;">We are excited to see you!</p>
-        <hr style="border-top: 2px solid #e0e0e0; margin: 20px 0;" />
-        <h3 style="color: #27ae60;">You are now checked in! ✅</h3>
-        <p style="font-size: 16px; color: #7f8c8d;">Thank you for your response. We're thrilled to have you with us! 🎉</p>
-      </div>
-    `);
-    Existinguser.Check_In=true;
-    await Existinguser.save()
-  }
-  else{
-    res.send("Given user is not present")
-  }
+  try {
+    const ObjectID = req.params.Id;
+    const id = ObjectID.split(':')[1];
+    const UserID = new mongoose.Types.ObjectId(id);
 
+    // Fetch the user from the database
+    const Existinguser = await RSVP_Model.findOne({ _id: UserID });
+
+    // Check if user exists
+    if (!Existinguser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Check if the user has already checked in
+    if (Existinguser.Check_In) {
+      return res.status(200).json({
+        message: `Welcome Back, ${Existinguser.name}! You are already checked in. 🎉`,
+        status: "already checked-in",
+      });
+    }
+
+    // Mark the user as checked-in
+    Existinguser.Check_In = true;
+    await Existinguser.save();
+
+    return res.status(200).json({
+      message: `Welcome, ${Existinguser.name}! You are now checked in. ✅`,
+      status: "checked-in",
+    });
+
+  } catch (error) {
+    console.error("Error during check-in:", error);
+    return res.status(500).json({
+      message: "An error occurred while processing the check-in. Please try again later.",
+    });
+  }
+};
+
+
+//function to Retrive The Details of RSVP ,Real Time Dashboard
+ exports.getRSVPDetails= async (req,res) => {
+  const AttendingData = await RSVP_Model.find({ attending: true });
+  console.log(AttendingData)
+res.json({
+  Attends:AttendingData
+})
 }
-
-
-
-
-
-
-
-
 
 // Function to run the Python code
 exports.Python = async (req, res) => {
@@ -184,8 +203,8 @@ exports.Python = async (req, res) => {
 
 
 
-exports.DeleteAll=async(req,res)=>{
+exports.DeleteAll = async (req, res) => {
   console.log("hey this route is just hit")
-  const delData=await RSVP_Model.deleteMany()
+  const delData = await RSVP_Model.deleteMany()
   res.send(delData)
 }

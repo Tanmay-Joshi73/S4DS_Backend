@@ -6,6 +6,7 @@ const UserRoutes=require('./Routes/route')
 const bodyparser=require('body-parser')
 const dotenv=require("dotenv").config()
 const cors=require("cors")
+const rateLimit = require('express-rate-limit');
 app.use(cors())
 app.use(express.json())
 app.use(bodyparser.json())
@@ -19,6 +20,13 @@ app.use('/App',UserRoutes)
 app.get('*',(req,res)=>{
   res.redirect('/App/Get')
 })
+
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per windowMs
+});
+
+app.use(limiter);
 app.listen(8000,'0.0.0.0',()=>{
     console.log("Listening from the server")
 })

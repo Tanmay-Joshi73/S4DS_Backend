@@ -199,10 +199,6 @@ exports.Python = async (req, res) => {
     });
   });
 };
-
-
-
-
 exports.DeleteAll = async (req, res) => {
   console.log("hey this route is just hit")
   const delData = await RSVP_Model.deleteMany()
